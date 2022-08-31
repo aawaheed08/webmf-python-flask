@@ -1,0 +1,50 @@
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    
+    - uses: azure/docker-login@v1
+      with:
+        login-server: bdoexdevacr02.azurecr.io
+        username: ${{ secrets.acr_bdoexdevacr02_username }}
+        password: ${{ secrets.acr_bdoexdevacr02_password }}
+    
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        docker build "$GITHUB_WORKSPACE/" -f  "Dockerfile" -t bdoexdevacr02.azurecr.io/bdoexdevcluster04:${{ github.sha }} --label dockerfile-path=Dockerfile
+        docker push bdoexdevacr02.azurecr.io/bdoexdevcluster04:${{ github.sha }}
+    
+    - uses: azure/k8s-set-context@v1
+      with:
+         kubeconfig: ${{ secrets.aks_bdoexdevcluster04_kubeConfig }}
+      id: login
+    
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep python | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace python`
+        fi
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: python
+        container-registry-url: bdoexdevacr02.azurecr.io
+        container-registry-username: ${{ secrets.acr_bdoexdevacr02_username }}
+        container-registry-password: ${{ secrets.acr_bdoexdevacr02_password }}
+        secret-name: bdoexdevclusdockerauth
+       
+    - uses: azure/k8s-deploy@v1.2
+      with:
+        namespace: python
+        manifests: |
+          manifests/deployment.yml
+          manifests/service.yml
+        images: |
+          bdoexdevacr02.azurecr.io/bdoexdevcluster04:${{ github.sha }}
+        imagepullsecrets: |
+          bdoexdevclusdockerauth
