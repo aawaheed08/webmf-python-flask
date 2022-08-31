@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: "bdoexdevcluster04-7d07"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "bdoexdevcluster04-7d07"
+  template:
+    metadata:
+      labels:
+        app: "bdoexdevcluster04-7d07"
+    spec:
+      containers:
+        - name: "bdoexdevcluster04-7d07"
+          image: "bdoexdevacr02.azurecr.io/bdoexdevcluster04"
+          ports:
+          - containerPort: 5000
