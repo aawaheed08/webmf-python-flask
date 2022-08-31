@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: "bdoexdevcluster04-7d07"
+    labels:
+        app: "bdoexdevcluster04-7d07"
+spec:
+    type: LoadBalancer
+    ports:
+    - port: 5000
+      targetPort: 5000
+      protocol: TCP
+      name: http
+    selector:
+        app: "bdoexdevcluster04-7d07"
